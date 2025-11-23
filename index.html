@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Neon Reef Run</title>
+    <style>
+        :root {
+            --reef-bg-top: #173b78;
+            --reef-bg-bottom: #1f4f94;
+            --reef-glow: rgba(140, 230, 255, 0.25);
+            --hud-bg: rgba(10, 26, 61, 0.55);
+            --hud-text: #e8f7ff;
+            --black-core: #0b101c;
+            --black-glow: 0 0 10px rgba(0, 240, 255, 0.45), 0 0 18px rgba(0, 240, 255, 0.2);
+            --player-active: rgb(255, 48, 48);
+            --player-inactive: rgb(255, 162, 162);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--reef-bg-top) 0%, var(--reef-bg-bottom) 100%);
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(900px 700px at 20% 30%, var(--reef-glow), transparent 60%),
+                radial-gradient(700px 500px at 75% 20%, rgba(255, 180, 220, 0.18), transparent 60%),
+                radial-gradient(1000px 800px at 50% 80%, rgba(0, 200, 255, 0.2), transparent 65%),
+                radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.8), transparent 60%),
+                radial-gradient(1px 1px at 25% 40%, rgba(200, 230, 255, 0.8), transparent 60%),
+                radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.9), transparent 60%),
+                radial-gradient(1px 1px at 80% 50%, rgba(200, 255, 255, 0.8), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(1px 1px at 15% 20%, rgba(255, 255, 255, 0.8), transparent 60%),
+                radial-gradient(1px 1px at 40% 65%, rgba(255, 255, 255, 0.7), transparent 60%),
+                radial-gradient(1px 1px at 70% 30%, rgba(200, 230, 255, 0.6), transparent 60%),
+                radial-gradient(1px 1px at 85% 80%, rgba(255, 255, 255, 0.75), transparent 60%);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: var(--hud-bg);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+            font-size: 14px;
+            color: var(--hud-text);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            z-index: 3;
+        }
+
+        .ball {
+            width: 14px;
+            height: 14px;
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.25);
+            z-index: 1;
+        }
+
+        #red-ball {
+            z-index: 2;
+        }
+
+        .black-ball {
+            background-color: var(--black-core);
+            box-shadow: var(--black-glow);
+        }
+
+        .player-active {
+            background-color: var(--player-active);
+            box-shadow: 0 0 10px rgba(255, 90, 90, 0.7), 0 0 16px rgba(255, 40, 40, 0.4);
+        }
+
+        .player-inactive {
+            background-color: var(--player-inactive);
+            box-shadow: 0 0 8px rgba(255, 150, 150, 0.5);
+        }
+
+        .powerup {
+            position: absolute;
+            width: 84px;
+            height: 30px;
+            border-radius: 4px;
+            color: white;
+            font-size: 10px;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .powerup-speed {
+            background-color: #1e90ff;
+            box-shadow: 0 0 12px rgba(30, 144, 255, 0.7), 0 0 20px rgba(30, 144, 255, 0.4);
+        }
+
+        .powerup-invincible {
+            background-color: #d4af37;
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.7), 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+
+        #difficulty-menu {
+            position: fixed;
+            background: rgba(10, 26, 61, 0.9);
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 5;
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+        }
+
+        #difficulty-menu button {
+            background: rgba(0, 180, 255, 0.15);
+            color: #e8f7ff;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+        }
+
+        #difficulty-menu button:hover {
+            background: rgba(0, 240, 255, 0.25);
+        }
+
+        #countdown-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 72px;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+            color: #e8f7ff;
+            text-shadow: 0 0 16px rgba(0, 240, 255, 0.7), 0 0 24px rgba(0, 240, 255, 0.4);
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 6;
+        }
+
+        #restart-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 16px;
+            background: rgba(0, 180, 255, 0.2);
+            color: #e8f7ff;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+            display: none;
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+        }
+
+        #restart-btn:hover {
+            background: rgba(0, 240, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="hud">
+        Time: <span id="time-remaining">10</span>s |
+        Black balls: <span id="ball-count">1</span> |
+        Status: <span id="status-text">Playing</span> |
+        Difficulty: <span id="difficulty-label">Easy</span>
+    </div>
+    <div id="red-ball" class="ball"></div>
+    <div id="difficulty-menu">
+        <button data-difficulty="easy">Easy</button>
+        <button data-difficulty="medium">Medium</button>
+        <button data-difficulty="hard">Hard</button>
+    </div>
+    <div id="countdown-overlay">3</div>
+    <button id="restart-btn">Restart</button>
+
+    <script>
+        (function () {
+            const redBall = document.getElementById("red-ball");
+            const timeRemainingEl = document.getElementById("time-remaining");
+            const ballCountEl = document.getElementById("ball-count");
+            const statusText = document.getElementById("status-text");
+            const difficultyLabel = document.getElementById("difficulty-label");
+            const difficultyMenu = document.getElementById("difficulty-menu");
+            const countdownOverlay = document.getElementById("countdown-overlay");
+            const restartBtn = document.getElementById("restart-btn");
+
+            // Tunable global settings
+            const ROUND_TIME_SECONDS = 5;
+            const LOSS_RESET_DELAY_MS = 3000;
+            const NEW_PLAYER_EVERY_ROUNDS = 2;
+            const PLAYER_SPEED_START = 4;
+            const PLAYER_SPEED_PER_ROUND = 0.33;
+            const PLAYER_SMOOTHING = 0.2; // lower is smoother/slower to turn
+            const BLACK_BALL_SPEED_START = 1.5;
+            const BLACK_BALL_SPEED_INCREMENT = 0.3; // extra speed per additional ball
+            const PLAY_AREA_PADDING = 10;
+            const AUTOPILOT_DIR_CHANGE_MIN_MS = 800;
+            const AUTOPILOT_DIR_CHANGE_MAX_MS = 1600;
+            const AUTOPILOT_AVOID_WEIGHT = 1.2;
+            const ACTIVE_AVOID_WEIGHT = 0.6;
+            const SPEED_BOOST_AMOUNT = 1;
+            const POWERUP_DURATION_MS = 2000;
+            const POWERUP_SPAWN_ROUND = 3;
+            const POWERUP_WIDTH = 84;
+            const POWERUP_HEIGHT = 30;
+            const POWERUP_SPAWN_DELAY_MIN_MS = 600;
+            const POWERUP_SPAWN_DELAY_MAX_MS = 2600;
+            const BLACK_SPAWN_INSET = 50; // how far from corners/edges black balls spawn
+            const SPEED_RAMP_MAX_ROUND = 15;
+            const MAX_PLAYERS = 15;
+            const DIFFICULTIES = {
+                easy: {
+                    label: "Easy",
+                    startBalls: 1,
+                    playerSpeedDelta: 0,
+                    enemySpeedDelta: 0,
+                },
+                medium: {
+                    label: "Medium",
+                    startBalls: 4,
+                    playerSpeedDelta: 0,
+                    enemySpeedDelta: 0,
+                },
+                hard: {
+                    label: "Hard",
+                    startBalls: 5,
+                    playerSpeedDelta: 0.2,
+                    enemySpeedDelta: 0.2,
+                },
+            };
+
+            // Game state
+            let blackBalls = [];
+            let ballCount = 1;
+            let timer = ROUND_TIME_SECONDS;
+            let timerInterval = null;
+            let chaseInterval = null;
+            let isGameOver = false;
+            let roundsSurvived = 0;
+            let speedBoostUntil = 0;
+            let speedBoostHolder = null;
+            let invincibleUntil = 0;
+            let speedPowerupEl = null;
+            let invinciblePowerupEl = null;
+            let powerupSpawnTimeout = null;
+            let playerSpeedDelta = 0;
+            let enemySpeedDelta = 0;
+            let currentDifficulty = "easy";
+            let isCountingDown = false;
+            let audioCtx = null;
+            let pendingRestart = false;
+
+            const players = [];
+            let activeIndex = 0;
+
+            function placeElement(el, x, y) {
+                el.style.left = x + "px";
+                el.style.top = y + "px";
+            }
+
+            function createPlayer(elOverride) {
+                const el = elOverride || document.createElement("div");
+                el.className = "ball red-player";
+                el.style.zIndex = "2";
+                if (!document.body.contains(el)) {
+                    document.body.appendChild(el);
+                }
+
+                const player = {
+                    el,
+                    x: 0,
+                    y: 0,
+                    vx: 0,
+                    vy: 0,
+                    inputX: 0,
+                    inputY: 0,
+                    isActive: false,
+                    autoDirX: 0,
+                    autoDirY: 0,
+                    autoDirChangeAt: 0,
+                };
+                setRandomAutoDir(player);
+                return player;
+            }
+
+            function spawnExtraPlayer() {
+                if (isGameOver || players.length >= MAX_PLAYERS) return;
+                const reference = players[activeIndex] || players[0];
+                const p = createPlayer();
+                if (reference) {
+                    p.x = clamp(reference.x + 16, PLAY_AREA_PADDING, window.innerWidth - p.el.offsetWidth - PLAY_AREA_PADDING);
+                    p.y = clamp(reference.y + 16, PLAY_AREA_PADDING, window.innerHeight - p.el.offsetHeight - PLAY_AREA_PADDING);
+                } else {
+                    p.x = (window.innerWidth / 2) - (p.el.offsetWidth / 2);
+                    p.y = (window.innerHeight / 2) - (p.el.offsetHeight / 2);
+                }
+                p.vx = 0;
+                p.vy = 0;
+                setRandomAutoDir(p);
+                placeElement(p.el, p.x, p.y);
+                players.push(p);
+                setActivePlayer(activeIndex); // maintain current control, update classes
+            }
+
+            function positionPlayersAtCenter() {
+                const startX = (window.innerWidth / 2);
+                const startY = (window.innerHeight / 2);
+                players.forEach((p, idx) => {
+                    const offset = (idx - activeIndex) * 20;
+                    p.x = startX + offset - (p.el.offsetWidth / 2);
+                    p.y = startY + offset - (p.el.offsetHeight / 2);
+                    p.vx = 0;
+                    p.vy = 0;
+                    setRandomAutoDir(p);
+                    placeElement(p.el, p.x, p.y);
+                });
+            }
+
+            function randomUnitVector() {
+                const angle = Math.random() * Math.PI * 2;
+                return { x: Math.cos(angle), y: Math.sin(angle) };
+            }
+
+            function setRandomAutoDir(player) {
+                const dir = randomUnitVector();
+                player.autoDirX = dir.x;
+                player.autoDirY = dir.y;
+                const span = AUTOPILOT_DIR_CHANGE_MAX_MS - AUTOPILOT_DIR_CHANGE_MIN_MS;
+                player.autoDirChangeAt = Date.now() + AUTOPILOT_DIR_CHANGE_MIN_MS + Math.random() * span;
+            }
+
+            function randomSpawnPosition(width = 14, height = 14) {
+                const x = Math.random() * (window.innerWidth - PLAY_AREA_PADDING * 2 - width) + PLAY_AREA_PADDING;
+                const y = Math.random() * (window.innerHeight - PLAY_AREA_PADDING * 2 - height) + PLAY_AREA_PADDING;
+                return { x, y };
+            }
+
+            function randBetween(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            function clearBlackBalls() {
+                blackBalls.forEach(ball => ball.remove());
+                blackBalls = [];
+            }
+
+            function cornerSpawnPosition(idx) {
+                const minX = PLAY_AREA_PADDING;
+                const maxX = window.innerWidth - PLAY_AREA_PADDING - 14;
+                const minY = PLAY_AREA_PADDING;
+                const maxY = window.innerHeight - PLAY_AREA_PADDING - 14;
+                const inset = BLACK_SPAWN_INSET;
+                const corners = [
+                    {
+                        x: randBetween(minX, Math.min(minX + inset, maxX)),
+                        y: randBetween(minY, Math.min(minY + inset, maxY)), // top-left
+                    },
+                    {
+                        x: randBetween(Math.max(maxX - inset, minX), maxX),
+                        y: randBetween(minY, Math.min(minY + inset, maxY)), // top-right
+                    },
+                    {
+                        x: randBetween(Math.max(maxX - inset, minX), maxX),
+                        y: randBetween(Math.max(maxY - inset, minY), maxY), // bottom-right
+                    },
+                    {
+                        x: randBetween(minX, Math.min(minX + inset, maxX)),
+                        y: randBetween(Math.max(maxY - inset, minY), maxY), // bottom-left
+                    },
+                ];
+                return corners[idx % 4];
+            }
+
+            function sideSpawnPosition(idx) {
+                const minX = PLAY_AREA_PADDING;
+                const maxX = window.innerWidth - PLAY_AREA_PADDING - 14;
+                const minY = PLAY_AREA_PADDING;
+                const maxY = window.innerHeight - PLAY_AREA_PADDING - 14;
+                const inset = BLACK_SPAWN_INSET;
+                const positions = [
+                    {
+                        x: randBetween(Math.min(maxX - inset, minX + inset), Math.max(minX + inset, maxX - inset)),
+                        y: randBetween(minY, Math.min(minY + inset, maxY)), // top side between corners
+                    },
+                    {
+                        x: randBetween(Math.max(maxX - inset, minX), maxX), // right side between corners
+                        y: randBetween(Math.min(maxY - inset, minY + inset), Math.max(minY + inset, maxY - inset)),
+                    },
+                    {
+                        x: randBetween(Math.min(maxX - inset, minX + inset), Math.max(minX + inset, maxX - inset)),
+                        y: randBetween(Math.max(maxY - inset, minY), maxY), // bottom side
+                    },
+                    {
+                        x: randBetween(minX, Math.min(minX + inset, maxX)), // left side
+                        y: randBetween(Math.min(maxY - inset, minY + inset), Math.max(minY + inset, maxY - inset)),
+                    },
+                ];
+                return positions[idx % 4];
+            }
+
+            function spawnBlackBalls(count) {
+                clearBlackBalls();
+                for (let i = 0; i < count; i++) {
+                    const ball = document.createElement("div");
+                    ball.className = "ball black-ball";
+                    const pos = i < 4 ? cornerSpawnPosition(i) : sideSpawnPosition(i - 4);
+                    placeElement(ball, pos.x, pos.y);
+                    document.body.appendChild(ball);
+                    blackBalls.push(ball);
+                }
+            }
+
+            function clamp(value, min, max) {
+                return Math.min(max, Math.max(min, value));
+            }
+
+            function playerIntersectsElement(player, el) {
+                if (!el) return false;
+                const px = player.x;
+                const py = player.y;
+                const pw = player.el.offsetWidth;
+                const ph = player.el.offsetHeight;
+                const ex = parseFloat(el.style.left) || 0;
+                const ey = parseFloat(el.style.top) || 0;
+                const ew = el.offsetWidth;
+                const eh = el.offsetHeight;
+                const noOverlap = px + pw < ex || px > ex + ew || py + ph < ey || py > ey + eh;
+                return !noOverlap;
+            }
+
+            function clearPowerups() {
+                if (speedPowerupEl) speedPowerupEl.remove();
+                if (invinciblePowerupEl) invinciblePowerupEl.remove();
+                speedPowerupEl = null;
+                invinciblePowerupEl = null;
+            }
+
+            function clearPowerupTimer() {
+                if (powerupSpawnTimeout) {
+                    clearTimeout(powerupSpawnTimeout);
+                    powerupSpawnTimeout = null;
+                }
+            }
+
+            function spawnSinglePowerup() {
+                clearPowerups();
+                powerupSpawnTimeout = null;
+                const isSpeed = Math.random() < 0.5;
+                const pos = randomSpawnPosition(POWERUP_WIDTH, POWERUP_HEIGHT);
+                const el = document.createElement("div");
+                el.className = "powerup " + (isSpeed ? "powerup-speed" : "powerup-invincible");
+                el.textContent = isSpeed ? "^^" : "*";
+                placeElement(el, pos.x, pos.y);
+                document.body.appendChild(el);
+                if (isSpeed) {
+                    speedPowerupEl = el;
+                    invinciblePowerupEl = null;
+                } else {
+                    invinciblePowerupEl = el;
+                    speedPowerupEl = null;
+                }
+            }
+
+            function spawnPowerupsForRound() {
+                clearPowerups();
+                clearPowerupTimer();
+                const currentRound = roundsSurvived + 1;
+                if (currentRound < POWERUP_SPAWN_ROUND) return;
+
+                const delay = POWERUP_SPAWN_DELAY_MIN_MS + Math.random() * (POWERUP_SPAWN_DELAY_MAX_MS - POWERUP_SPAWN_DELAY_MIN_MS);
+                powerupSpawnTimeout = setTimeout(spawnSinglePowerup, delay);
+            }
+
+            function applySpeedBoost(holderIdx) {
+                speedBoostUntil = Date.now() + POWERUP_DURATION_MS;
+                speedBoostHolder = holderIdx;
+                if (speedPowerupEl) {
+                    speedPowerupEl.remove();
+                    speedPowerupEl = null;
+                }
+                statusText.textContent = "Speed boost!";
+            }
+
+            function applyInvincibility() {
+                invincibleUntil = Date.now() + POWERUP_DURATION_MS;
+                if (invinciblePowerupEl) {
+                    invinciblePowerupEl.remove();
+                    invinciblePowerupEl = null;
+                }
+                statusText.textContent = "Invincible!";
+            }
+
+            function checkPowerupPickup() {
+                players.forEach((p, idx) => {
+                    if (speedPowerupEl && playerIntersectsElement(p, speedPowerupEl)) {
+                        applySpeedBoost(idx);
+                    }
+                    if (invinciblePowerupEl && playerIntersectsElement(p, invinciblePowerupEl)) {
+                        applyInvincibility();
+                    }
+                });
+            }
+
+            const keysPressed = new Set();
+
+            function updateActiveInputFromKeys(player) {
+                player.inputX = 0;
+                player.inputY = 0;
+                if (keysPressed.has("ArrowLeft")) player.inputX -= 1;
+                if (keysPressed.has("ArrowRight")) player.inputX += 1;
+                if (keysPressed.has("ArrowUp")) player.inputY -= 1;
+                if (keysPressed.has("ArrowDown")) player.inputY += 1;
+
+                if (player.inputX !== 0 || player.inputY !== 0) {
+                    const len = Math.hypot(player.inputX, player.inputY);
+                    player.inputX /= len;
+                    player.inputY /= len;
+                }
+            }
+
+            document.addEventListener("keydown", (event) => {
+                if (isGameOver) return;
+                if (event.code === "Space") {
+                    event.preventDefault();
+                    spawnExtraPlayer();
+                    return;
+                }
+                if (!["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(event.key)) return;
+                keysPressed.add(event.key);
+                const active = players[activeIndex];
+                if (active) updateActiveInputFromKeys(active);
+            });
+
+            document.addEventListener("keyup", (event) => {
+                if (!["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(event.key)) return;
+                keysPressed.delete(event.key);
+                const active = players[activeIndex];
+                if (active) updateActiveInputFromKeys(active);
+            });
+
+            function avoidanceInput(player) {
+                if (blackBalls.length === 0) return { x: 0, y: 0 };
+                // steer away from nearest black ball
+                let nearest = null;
+                let nearestDist = Infinity;
+                blackBalls.forEach(ball => {
+                    const dx = player.x - (parseFloat(ball.style.left) || 0);
+                    const dy = player.y - (parseFloat(ball.style.top) || 0);
+                    const d = Math.hypot(dx, dy);
+                    if (d < nearestDist) {
+                        nearestDist = d;
+                        nearest = { dx, dy };
+                    }
+                });
+                if (!nearest || nearestDist === 0) return { x: 0, y: 0 };
+                const len = Math.hypot(nearest.dx, nearest.dy);
+                return { x: nearest.dx / len, y: nearest.dy / len };
+            }
+
+            function updatePlayer(player, isActive, idx) {
+                let desiredX = 0;
+                let desiredY = 0;
+                const avoid = avoidanceInput(player);
+
+                if (isActive) {
+                    updateActiveInputFromKeys(player);
+                    const magInput = Math.hypot(player.inputX, player.inputY);
+                    if (magInput > 0) {
+                        desiredX = player.inputX + avoid.x * ACTIVE_AVOID_WEIGHT;
+                        desiredY = player.inputY + avoid.y * ACTIVE_AVOID_WEIGHT;
+                    } else {
+                        desiredX = 0;
+                        desiredY = 0; // no self-movement when no input
+                    }
+                } else {
+                    if (Date.now() > player.autoDirChangeAt) {
+                        setRandomAutoDir(player);
+                    }
+                    desiredX = player.autoDirX + avoid.x * AUTOPILOT_AVOID_WEIGHT;
+                    desiredY = player.autoDirY + avoid.y * AUTOPILOT_AVOID_WEIGHT;
+                }
+
+                const mag = Math.hypot(desiredX, desiredY);
+                if (mag === 0) {
+                    // if idle or zero vector, keep still for active, randomize for autopilot
+                    if (!isActive) {
+                        const dir = randomUnitVector();
+                        desiredX = dir.x;
+                        desiredY = dir.y;
+                    }
+                } else {
+                    desiredX /= mag;
+                    desiredY /= mag;
+                }
+                player.inputX = desiredX;
+                player.inputY = desiredY;
+
+                const hasSpeedBoost = isSpeedBoostActive() && speedBoostHolder === idx;
+                const speedBoost = hasSpeedBoost ? SPEED_BOOST_AMOUNT : 0;
+                const speedRampRounds = Math.min(roundsSurvived, SPEED_RAMP_MAX_ROUND - 1);
+                const speed = PLAYER_SPEED_START + playerSpeedDelta + (isActive ? speedRampRounds * PLAYER_SPEED_PER_ROUND : 0) + speedBoost;
+                const targetVelX = player.inputX * speed;
+                const targetVelY = player.inputY * speed;
+
+                player.vx += (targetVelX - player.vx) * PLAYER_SMOOTHING;
+                player.vy += (targetVelY - player.vy) * PLAYER_SMOOTHING;
+
+                player.x += player.vx;
+                player.y += player.vy;
+
+                const maxX = window.innerWidth - player.el.offsetWidth - PLAY_AREA_PADDING;
+                const maxY = window.innerHeight - player.el.offsetHeight - PLAY_AREA_PADDING;
+                player.x = clamp(player.x, PLAY_AREA_PADDING, maxX);
+                player.y = clamp(player.y, PLAY_AREA_PADDING, maxY);
+
+                placeElement(player.el, player.x, player.y);
+            }
+
+            function setActivePlayer(index) {
+                activeIndex = clamp(index, 0, players.length - 1);
+                players.forEach((p, idx) => {
+                    const active = idx === activeIndex;
+                    p.isActive = active;
+                    p.el.classList.toggle("player-active", active);
+                    p.el.classList.toggle("player-inactive", !active);
+                });
+            }
+
+            function eliminatePlayer(idx) {
+                if (idx < 0 || idx >= players.length) return;
+                const wasActive = idx === activeIndex;
+                const [p] = players.splice(idx, 1);
+                p.el.remove();
+                if (speedBoostHolder === idx) {
+                    speedBoostHolder = null;
+                    speedBoostUntil = 0;
+                } else if (speedBoostHolder !== null && speedBoostHolder > idx) {
+                    speedBoostHolder -= 1; // shift holder index after removal
+                }
+
+                if (players.length === 0) {
+                    handleLoss();
+                    return;
+                }
+
+                if (wasActive) {
+                    setActivePlayer(Math.min(idx, players.length - 1));
+                    statusText.textContent = "Next ball!";
+                }
+            }
+
+            function hasCollision(ball, player) {
+                const targetX = player.x;
+                const targetY = player.y;
+                const ballX = parseFloat(ball.style.left) || 0;
+                const ballY = parseFloat(ball.style.top) || 0;
+
+                const halfSize = player.el.offsetWidth / 2;
+                const overlapX = Math.abs(targetX - ballX) <= halfSize;
+                const overlapY = Math.abs(targetY - ballY) <= halfSize;
+                return overlapX && overlapY;
+            }
+
+            function isSpeedBoostActive() {
+                return Date.now() < speedBoostUntil;
+            }
+
+            function isInvincibleActive() {
+                return Date.now() < invincibleUntil;
+            }
+
+            function moveBlackBalls() {
+                if (isGameOver || players.length === 0) return;
+                blackBalls.forEach((ball, ballIndex) => {
+                    const ballX = parseFloat(ball.style.left) || 0;
+                    const ballY = parseFloat(ball.style.top) || 0;
+
+                    // chase closest red ball
+                    let targetPlayer = players[0];
+                    let bestDist = Infinity;
+                    players.forEach(p => {
+                        const dxp = p.x - ballX;
+                        const dyp = p.y - ballY;
+                        const dp = Math.hypot(dxp, dyp);
+                        if (dp < bestDist) {
+                            bestDist = dp;
+                            targetPlayer = p;
+                        }
+                    });
+
+                    const dx = targetPlayer.x - ballX;
+                    const dy = targetPlayer.y - ballY;
+                    const dist = Math.hypot(dx, dy) || 1;
+
+                    const chaseDirX = isInvincibleActive() ? -dx : dx;
+                    const chaseDirY = isInvincibleActive() ? -dy : dy;
+                    const ballSpeed = BLACK_BALL_SPEED_START + enemySpeedDelta + (ballIndex * BLACK_BALL_SPEED_INCREMENT);
+                    const stepX = (chaseDirX / dist) * ballSpeed;
+                    const stepY = (chaseDirY / dist) * ballSpeed;
+
+                    const newX = clamp(ballX + stepX, PLAY_AREA_PADDING, window.innerWidth - ball.offsetWidth - PLAY_AREA_PADDING);
+                    const newY = clamp(ballY + stepY, PLAY_AREA_PADDING, window.innerHeight - ball.offsetHeight - PLAY_AREA_PADDING);
+
+                    placeElement(ball, newX, newY);
+
+                    if (!isInvincibleActive()) {
+                        for (let i = players.length - 1; i >= 0; i--) {
+                            if (hasCollision(ball, players[i])) {
+                                eliminatePlayer(i);
+                            }
+                        }
+                    }
+                });
+            }
+
+            function startChase() {
+                clearInterval(chaseInterval);
+                chaseInterval = setInterval(moveBlackBalls, 16);
+            }
+
+            function gameLoop() {
+                if (!isGameOver) {
+                    players.forEach((p, idx) => updatePlayer(p, idx === activeIndex, idx));
+                    checkPowerupPickup();
+                }
+                requestAnimationFrame(gameLoop);
+            }
+
+            function stopChase() {
+                clearInterval(chaseInterval);
+            }
+
+            function startTimer() {
+                clearInterval(timerInterval);
+                timer = ROUND_TIME_SECONDS;
+                timeRemainingEl.textContent = timer;
+
+                timerInterval = setInterval(() => {
+                    if (isGameOver) return;
+
+                    timer -= 1;
+                    timeRemainingEl.textContent = timer;
+
+                    if (timer <= 0) {
+                        nextRound();
+                    }
+                }, 1000);
+            }
+
+            function stopTimer() {
+                clearInterval(timerInterval);
+            }
+
+            function playBeep(freq = 840, duration = 150) {
+                try {
+                    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    oscillator.type = "sine";
+                    oscillator.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
+                    oscillator.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + duration / 1000);
+                } catch (_) {
+                    // ignore audio errors (e.g., autoplay restrictions)
+                }
+            }
+
+            function startCountdown() {
+                if (isCountingDown) return;
+                isCountingDown = true;
+                stopTimer();
+                stopChase();
+                hideRestartButton();
+                let count = 3;
+                countdownOverlay.style.display = "flex";
+                countdownOverlay.textContent = count;
+                playBeep();
+
+                const tick = () => {
+                    count -= 1;
+                    if (count > 0) {
+                        countdownOverlay.textContent = count;
+                        playBeep();
+                        setTimeout(tick, 1000);
+                    } else {
+                        countdownOverlay.textContent = "GO!";
+                        playBeep(1080, 200);
+                        setTimeout(() => {
+                            countdownOverlay.style.display = "none";
+                            isCountingDown = false;
+                            startRound();
+                        }, 600);
+                    }
+                };
+
+                setTimeout(tick, 1000);
+            }
+
+            function startRound() {
+                if (players.length === 0) {
+                    players.push(createPlayer(redBall));
+                }
+                isGameOver = false;
+                pendingRestart = false;
+                statusText.textContent = "Playing";
+                speedBoostUntil = 0;
+                speedBoostHolder = null;
+                invincibleUntil = 0;
+                clearPowerups();
+                clearPowerupTimer();
+                keysPressed.clear();
+                stopTimer();
+                stopChase();
+                positionPlayersAtCenter();
+                players.forEach(p => setRandomAutoDir(p));
+                spawnBlackBalls(ballCount);
+                spawnPowerupsForRound();
+                ballCountEl.textContent = ballCount;
+                setActivePlayer(Math.min(activeIndex, players.length - 1));
+                startTimer();
+                startChase();
+            }
+
+            function nextRound() {
+                roundsSurvived += 1;
+                ballCount += 1;
+                startRound();
+            }
+
+            function resetPlayersToOne() {
+                players.forEach(p => p.el.remove());
+                players.length = 0;
+                players.push(createPlayer(redBall));
+                setActivePlayer(0);
+                roundsSurvived = 0;
+                speedBoostHolder = null;
+            }
+
+            function handleLoss() {
+                if (isGameOver) return;
+                isGameOver = true;
+                statusText.textContent = "You lost! Resetting...";
+                stopChase();
+                stopTimer();
+                clearPowerupTimer();
+                setTimeout(() => {
+                    const diff = DIFFICULTIES[currentDifficulty] || DIFFICULTIES.easy;
+                    ballCount = diff.startBalls;
+                    resetPlayersToOne();
+                    showRestartButton();
+                    pendingRestart = true;
+                }, LOSS_RESET_DELAY_MS);
+            }
+
+            window.addEventListener("resize", () => {
+                players.forEach(p => {
+                    const maxX = window.innerWidth - p.el.offsetWidth - PLAY_AREA_PADDING;
+                    const maxY = window.innerHeight - p.el.offsetHeight - PLAY_AREA_PADDING;
+                    p.x = clamp(p.x, PLAY_AREA_PADDING, maxX);
+                    p.y = clamp(p.y, PLAY_AREA_PADDING, maxY);
+                    placeElement(p.el, p.x, p.y);
+                });
+            });
+
+            function setDifficultyConfig(key) {
+                const diff = DIFFICULTIES[key] || DIFFICULTIES.easy;
+                currentDifficulty = key;
+                difficultyLabel.textContent = diff.label;
+                playerSpeedDelta = diff.playerSpeedDelta;
+                enemySpeedDelta = diff.enemySpeedDelta;
+                ballCount = diff.startBalls;
+                roundsSurvived = 0;
+            }
+
+            function applyDifficulty(key) {
+                setDifficultyConfig(key);
+                stopTimer();
+                stopChase();
+                clearPowerups();
+                clearPowerupTimer();
+                resetPlayersToOne();
+                isGameOver = false;
+                isCountingDown = false;
+                countdownOverlay.style.display = "none";
+                startCountdown();
+            }
+
+            function showDifficultyMenu(x, y) {
+                difficultyMenu.style.display = "flex";
+                const menuWidth = 140;
+                const menuHeight = 120;
+                const clampedX = clamp(x, 0, window.innerWidth - menuWidth);
+                const clampedY = clamp(y, 0, window.innerHeight - menuHeight);
+                difficultyMenu.style.left = clampedX + "px";
+                difficultyMenu.style.top = clampedY + "px";
+            }
+
+            function hideDifficultyMenu() {
+                difficultyMenu.style.display = "none";
+            }
+
+            function showRestartButton() {
+                restartBtn.style.display = "block";
+            }
+
+            function hideRestartButton() {
+                restartBtn.style.display = "none";
+            }
+
+            difficultyMenu.addEventListener("click", (e) => {
+                const key = e.target.getAttribute("data-difficulty");
+                if (key) {
+                    applyDifficulty(key);
+                    hideDifficultyMenu();
+                }
+            });
+
+            document.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                showDifficultyMenu(e.clientX, e.clientY);
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!difficultyMenu.contains(e.target)) {
+                    hideDifficultyMenu();
+                }
+            });
+
+            restartBtn.addEventListener("click", () => {
+                if (!pendingRestart && !isGameOver) return;
+                pendingRestart = false;
+                hideRestartButton();
+                const diff = DIFFICULTIES[currentDifficulty] || DIFFICULTIES.easy;
+                ballCount = diff.startBalls;
+                setDifficultyConfig(currentDifficulty);
+                stopTimer();
+                stopChase();
+                clearPowerups();
+                clearPowerupTimer();
+                resetPlayersToOne();
+                isGameOver = false;
+                isCountingDown = false;
+                countdownOverlay.style.display = "none";
+                startCountdown();
+            });
+
+            // initial setup
+            players.push(createPlayer(redBall));
+            setActivePlayer(0);
+            positionPlayersAtCenter();
+            setDifficultyConfig("easy");
+            showDifficultyMenu(window.innerWidth / 2, window.innerHeight / 2);
+            gameLoop();
+        })();
+    </script>
+</body>
+
+</html>

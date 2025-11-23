@@ -1,0 +1,12 @@
+# .Coding AI agentrules
+
+- Always read memory-bank files on new sessions; core docs: projectbrief, productContext, systemPatterns, techContext, activeContext, progress.
+- Game specifics:
+  - Difficulty menu shows on load and right-click; HUD shows difficulty; difficulty sets starting enemy count and speed deltas.
+  - Countdown with beeps must run before gameplay after selecting difficulty or clicking restart.
+  - After loss, no auto-restart; show Restart button and require click to restart with countdown.
+  - Clone spawning capped at 15; spacebar spawns clones near active red.
+  - Enemies spawn near corners/edges, chase nearest red; flee when invincible; speed ramp capped after round 15.
+  - Power-ups: one at a time per round after delay; speed boost tied to collector, invincibility global; any red can collect.
+  - Background uses lighter neon gradient/glow; keep contrast for black balls.
+- Keep code self-contained in `index.html`; avoid adding external assets unless requested.
