@@ -258,12 +258,12 @@ body::before {
 /* Mobile Control Buttons */
 #mobile-controls {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
     z-index: 20;
+    pointer-events: none;
+}
+
+#mobile-controls>* {
+    pointer-events: auto;
 }
 
 .mobile-only {
@@ -271,6 +271,7 @@ body::before {
 }
 
 .mobile-btn {
+    position: fixed;
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -300,15 +301,37 @@ body::before {
     line-height: 1;
 }
 
-#clone-btn {
+/* Clone buttons - positioned on left and right sides */
+.clone-btn-left {
+    bottom: 20px;
+    left: 20px;
     background: rgba(255, 215, 0, 0.2);
     border-color: var(--accent-gold);
     color: var(--accent-gold);
 }
 
-#clone-btn:active {
+.clone-btn-left:active {
     background: rgba(255, 215, 0, 0.4);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+.clone-btn-right {
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 215, 0, 0.2);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.clone-btn-right:active {
+    background: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+/* Pause button - positioned at top-right */
+.pause-btn {
+    top: 80px;
+    right: 20px;
 }
 
 /* Mobile Responsive Styles */
@@ -393,10 +416,19 @@ body::before {
         font-size: 20px;
     }
 
-    #mobile-controls {
+    .clone-btn-left {
+        bottom: 15px;
+        left: 15px;
+    }
+
+    .clone-btn-right {
         bottom: 15px;
         right: 15px;
-        gap: 10px;
+    }
+
+    .pause-btn {
+        top: 70px;
+        right: 15px;
     }
 
     #countdown-overlay {

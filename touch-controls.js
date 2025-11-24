@@ -26,6 +26,21 @@
     let touchInput = { x: 0, y: 0 };
     let activeTouchId = null;
 
+    // Track which elements should be ignored for joystick
+    const ignoredElements = new Set(['BUTTON', 'A']);
+
+    function shouldIgnoreTouch(touch) {
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!element) return false;
+
+        // Check if touch is on a button or inside a button
+        if (ignoredElements.has(element.tagName)) return true;
+        if (element.closest('button')) return true;
+        if (element.closest('#mobile-controls')) return true;
+
+        return false;
+    }
+
     // Mobile detection
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         || window.innerWidth <= 768;
@@ -35,10 +50,21 @@
         // Prevent default to avoid scrolling, zooming, etc.
         event.preventDefault();
 
-        // Only handle first touch for movement
+        // Only handle first touch for movement, and ignore touches on buttons
         if (activeTouchId !== null) return;
 
-        const touch = event.changedTouches[0];
+        // Find first touch that's not on a button
+        let touch = null;
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const t = event.changedTouches[i];
+            if (!shouldIgnoreTouch(t)) {
+                touch = t;
+                break;
+            }
+        }
+
+        if (!touch) return;
+
         activeTouchId = touch.identifier;
 
         // Set joystick center at touch location

@@ -96,10 +96,20 @@
 
     <!-- Mobile Control Buttons -->
     <div id="mobile-controls" class="mobile-only">
-        <button id="clone-btn" class="mobile-btn" onclick="spawnExtraPlayer()" aria-label="Clone Ball">
+        <!-- Left side clone button -->
+        <button id="clone-btn-left" class="mobile-btn clone-btn-left" onclick="spawnExtraPlayer()"
+            aria-label="Clone Ball">
             <span class="mobile-btn-icon">+</span>
         </button>
-        <button id="pause-btn" class="mobile-btn"
+
+        <!-- Right side clone button -->
+        <button id="clone-btn-right" class="mobile-btn clone-btn-right" onclick="spawnExtraPlayer()"
+            aria-label="Clone Ball">
+            <span class="mobile-btn-icon">+</span>
+        </button>
+
+        <!-- Pause button (top-right) -->
+        <button id="pause-btn" class="mobile-btn pause-btn"
             onclick="document.dispatchEvent(new KeyboardEvent('keydown', {code: 'Escape'}))" aria-label="Pause">
             <span class="mobile-btn-icon">⏸</span>
         </button>
