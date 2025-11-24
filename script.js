@@ -329,14 +329,32 @@ window.showMainMenu = null;
 
     const keysPressed = new Set();
 
-    function updateActiveInputFromKeys(player) {
+    // Initialize touch controls
+    let touchControls = null;
+    if (window.TouchControls) {
+        touchControls = window.TouchControls;
+        touchControls.init(canvas);
+    }
+
+    // Unified input handling for both keyboard and touch
+    function updateActiveInput(player) {
         player.inputX = 0;
         player.inputY = 0;
-        if (keysPressed.has("ArrowLeft")) player.inputX -= 1;
-        if (keysPressed.has("ArrowRight")) player.inputX += 1;
-        if (keysPressed.has("ArrowUp")) player.inputY -= 1;
-        if (keysPressed.has("ArrowDown")) player.inputY += 1;
 
+        // Touch input takes priority over keyboard
+        if (touchControls && touchControls.isTouchActive()) {
+            const touchInput = touchControls.getTouchInput();
+            player.inputX = touchInput.x;
+            player.inputY = touchInput.y;
+        } else {
+            // Keyboard input
+            if (keysPressed.has("ArrowLeft")) player.inputX -= 1;
+            if (keysPressed.has("ArrowRight")) player.inputX += 1;
+            if (keysPressed.has("ArrowUp")) player.inputY -= 1;
+            if (keysPressed.has("ArrowDown")) player.inputY += 1;
+        }
+
+        // Normalize input vector
         if (player.inputX !== 0 || player.inputY !== 0) {
             const len = Math.hypot(player.inputX, player.inputY);
             player.inputX /= len;
@@ -371,7 +389,7 @@ window.showMainMenu = null;
         if (["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(event.key)) {
             keysPressed.add(event.key);
             const active = players[activeIndex];
-            if (active) updateActiveInputFromKeys(active);
+            if (active) updateActiveInput(active);
         }
     });
 
@@ -379,7 +397,7 @@ window.showMainMenu = null;
         if (["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(event.key)) {
             keysPressed.delete(event.key);
             const active = players[activeIndex];
-            if (active) updateActiveInputFromKeys(active);
+            if (active) updateActiveInput(active);
         }
     });
 
@@ -409,8 +427,8 @@ window.showMainMenu = null;
         const avoid = avoidanceInput(player); // Vector to avoid nearest black ball
 
         if (isActive) {
-            // Active player controlled by keyboard
-            updateActiveInputFromKeys(player);
+            // Active player controlled by keyboard or touch
+            updateActiveInput(player);
             const magInput = Math.hypot(player.inputX, player.inputY);
             if (magInput > 0) {
                 // Blend keyboard input with avoidance nudge
@@ -659,6 +677,11 @@ window.showMainMenu = null;
 
         // Draw Black Balls
         blackBalls.forEach(b => drawBall(b, false));
+
+        // Draw Touch Controls (if active)
+        if (touchControls && !isGameOver && !isPaused && gameStarted && !isCountingDown) {
+            touchControls.render(ctx);
+        }
     }
 
     // Main Game Loop: Updates logic and renders the frame
@@ -760,6 +783,7 @@ window.showMainMenu = null;
         clearPowerups();
         clearPowerupTimer();
         keysPressed.clear();
+        if (touchControls) touchControls.reset();
         stopTimer();
 
         positionPlayersAtCenter();
@@ -816,6 +840,7 @@ window.showMainMenu = null;
         blackBalls = [];
         powerups = [];
         keysPressed.clear();
+        if (touchControls) touchControls.reset();
         render(); // Clear screen
 
         const diff = DIFFICULTIES[difficulty] || DIFFICULTIES.easy;
@@ -849,6 +874,7 @@ window.showMainMenu = null;
         if (document.activeElement) document.activeElement.blur();
 
         keysPressed.clear(); // Clear any stuck keys
+        if (touchControls) touchControls.reset();
         gameOverModal.classList.remove("visible");
         mainMenu.classList.remove("visible");
         window.startGame(currentDifficulty);

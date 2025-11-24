@@ -3,6 +3,10 @@
 
 <head>
     <title>Ball Tag</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@400;600&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
@@ -39,11 +43,11 @@
             <div class="guide-grid">
                 <div class="guide-item">
                     <span class="guide-icon">⌨️</span>
-                    <span class="guide-text">Arrow Keys to Move</span>
+                    <span class="guide-text">Arrow Keys or Touch to Move</span>
                 </div>
                 <div class="guide-item">
                     <span class="guide-icon">␣</span>
-                    <span class="guide-text">Space to Clone</span>
+                    <span class="guide-text">Space or Button to Clone</span>
                 </div>
                 <div class="guide-item">
                     <span class="guide-icon">⚡</span>
@@ -90,6 +94,18 @@
 
     <div id="countdown-overlay">3</div>
 
+    <!-- Mobile Control Buttons -->
+    <div id="mobile-controls" class="mobile-only">
+        <button id="clone-btn" class="mobile-btn" onclick="spawnExtraPlayer()" aria-label="Clone Ball">
+            <span class="mobile-btn-icon">+</span>
+        </button>
+        <button id="pause-btn" class="mobile-btn"
+            onclick="document.dispatchEvent(new KeyboardEvent('keydown', {code: 'Escape'}))" aria-label="Pause">
+            <span class="mobile-btn-icon">⏸</span>
+        </button>
+    </div>
+
+    <script src="touch-controls.js"></script>
     <script src="audio.js"></script>
     <script src="script.js"></script>
 </body>

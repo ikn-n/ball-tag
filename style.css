@@ -17,6 +17,10 @@ body {
     background: linear-gradient(180deg, var(--reef-bg-top) 0%, var(--reef-bg-bottom) 100%);
     font-family: 'Exo 2', sans-serif;
     color: white;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
 }
 
 /* Animated Background */
@@ -77,6 +81,9 @@ body::before {
     width: 100%;
     height: 100%;
     z-index: 1;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #hud {
@@ -246,4 +253,153 @@ body::before {
 
 .hidden {
     display: none !important;
+}
+
+/* Mobile Control Buttons */
+#mobile-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 20;
+}
+
+.mobile-only {
+    display: none;
+}
+
+.mobile-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.2);
+    border: 2px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-btn:active {
+    background: rgba(0, 240, 255, 0.4);
+    transform: scale(0.95);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+}
+
+.mobile-btn-icon {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+#clone-btn {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+#clone-btn:active {
+    background: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px),
+(hover: none) {
+    .mobile-only {
+        display: flex;
+    }
+
+    #hud {
+        top: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
+        max-width: 95%;
+    }
+
+    .hud-item {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .hud-icon {
+        font-size: 14px;
+    }
+
+    .game-title {
+        font-size: 32px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .guide-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .guide-item {
+        padding: 10px;
+    }
+
+    .guide-text {
+        font-size: 11px;
+    }
+
+    .difficulty-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+
+    .modal-content {
+        padding: 25px;
+        max-width: 90%;
+    }
+
+    #countdown-overlay {
+        font-size: 80px;
+    }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 28px;
+    }
+
+    .mobile-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+
+    .mobile-btn-icon {
+        font-size: 20px;
+    }
+
+    #mobile-controls {
+        bottom: 15px;
+        right: 15px;
+        gap: 10px;
+    }
+
+    #countdown-overlay {
+        font-size: 60px;
+    }
 }
