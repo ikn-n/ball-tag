@@ -105,8 +105,8 @@ window.showMainMenu = null;
 
     // Resize handling
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width = Math.min(window.innerWidth, 1440);
+        canvas.height = Math.min(window.innerHeight, 960);
         // Clamp positions after resize
         players.forEach(p => clampEntity(p));
         blackBalls.forEach(b => clampEntity(b));
